@@ -18,16 +18,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "I2C.h"
+#include "pwm.h"
 
 #define _XTAL_FREQ 8000000
-#define RS RE0
+/*#define RS RE0
 #define EN RE1
 #define D4 RD4
 #define D5 RB5
 #define D6 RD6
 #define D7 RD7
 
-/*#define date 0x04
+#define date 0x04
 #define month 0x05
 #define year 0x06
 #define hour 0x02
@@ -42,10 +43,8 @@ char hora_str [3];
 char min_str [3];
 char sec_str [3];*/
 
-uint8_t dia = 0x01, mes = 0x01, ye = 0x20, hora = 0x01, seg= 0x00, minutos=0x00;
-uint8_t h,m,s,d,me,an;
-
 void setup(void);
+uint8_t mdc;
 
 uint8_t bcd_to_decimal(uint8_t bcd) {
     return ((bcd >> 4) * 10) + (bcd & 0x0F);
@@ -54,12 +53,21 @@ uint8_t bcd_to_decimal(uint8_t bcd) {
 void main(void)
 {
     setup();
+    PWM_Init();
     while(1)
     {
         
         I2C_Master_Start();
         I2C_Master_Write(0x51);
-        PORTB = I2C_Master_Read(0);
+        mdc = I2C_Master_Read(0);
+        if(mdc == 1)
+        {
+            CCPR1L = 125;
+        }
+        else 
+        {
+            CCPR1L = 0;
+        }
         I2C_Master_Stop();
         __delay_ms(200);
         
