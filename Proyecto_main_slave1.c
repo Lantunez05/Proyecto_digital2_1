@@ -18,10 +18,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "I2C.h"
-#include "pwm.h"
+//#include "pwm.h"
 
 #define _XTAL_FREQ 8000000
 uint8_t z;
+uint8_t mDC;
 
 // Prototipos
 void setup (void);
@@ -47,7 +48,7 @@ void __interrupt() isr(void){
             PIR1bits.SSPIF = 0;         // Limpia bandera de interrupci?n recepci?n/transmisi?n SSP
             SSPCONbits.CKP = 1;         // Habilita entrada de pulsos de reloj SCL
             while(!SSPSTATbits.BF);     // Esperar a que la recepci?n se complete
-            PORTD = SSPBUF;             // Guardar en el PORTD el valor del buffer de recepci?n
+            mDC = SSPBUF;                // Guardar en el PORTD el valor del buffer de recepci?n
             __delay_us(250);
         }
         
@@ -67,16 +68,18 @@ void __interrupt() isr(void){
 
 void main(void) {
     setup();
-    PWM_Init();
+   // PWM_Init();
     while(1)
     {
         if (RB0 == 1)
         {
-            CCPR1L = 200;
+            mDC = 1;
+           // CCPR1L = 125;
         }
         else 
         {
-            CCPR1L = 0;
+            mDC = 0;
+           // CCPR1L = 0;
         }
         
        
@@ -97,7 +100,7 @@ void setup(void)
     OSCCONbits.SCS = 1; 
     
     
-    I2C_Slave_Init(0x51);   
+    I2C_Slave_Init(0x50);   
     return;
 }
 
