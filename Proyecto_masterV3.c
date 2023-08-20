@@ -81,7 +81,7 @@ void main(void)
         // Minutos
         I2C_Master_Start();          // Iniciar el I2C
         I2C_Master_Write(0xD0);      // Escribir la direccion del RTC para escritura
-        I2C_Master_Write(min);      // Seleccionar la direccion para los años
+        I2C_Master_Write(min);      // Seleccionar la direccion para los aÃ±os
         I2C_Master_RepeatedStart();  // Reiniciar el I2C
         I2C_Master_Write(0xD1);      // Escribir la direccion del RTC para lectura
         m = I2C_Master_Read(0);
@@ -167,5 +167,5 @@ void setup(void)
     OSCCONbits.IRCF = 0b111; //8 MHz
     OSCCONbits.SCS = 1;
     
-    I2C_Master_Init(100000);        // Inicializar Comuncación I2C
+    I2C_Master_Init(100000);        // Inicializar ComuncaciÃ³n I2C
 }
