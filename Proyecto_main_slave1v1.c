@@ -22,6 +22,8 @@
 
 #define _XTAL_FREQ 8000000
 uint8_t z;
+int x = 0;
+int st_sens = 0;
 uint8_t mDC;
 
 // Prototipos
@@ -40,7 +42,7 @@ void __interrupt() isr(void){
             SSPCONbits.CKP = 1;         // Enables SCL (Clock)
         }
         
-        if(!SSPSTATbits.D_nA && !SSPSTATbits.R_nW)
+        if(!SSPSTATbits.D_nA && !SSPSTATbits.R_nW) // Lectura
         {
             //__delay_us(7);
             z = SSPBUF;                 // Lectura del SSBUF para limpiar el buffer y la bandera BF
@@ -52,11 +54,11 @@ void __interrupt() isr(void){
             __delay_us(250);
         }
         
-        else if(!SSPSTATbits.D_nA && SSPSTATbits.R_nW)
+        else if(!SSPSTATbits.D_nA && SSPSTATbits.R_nW) // Escritura
         {
             z = SSPBUF;
             BF = 0;
-            SSPBUF = PORTB;
+            SSPBUF = mDC;
             SSPCONbits.CKP = 1;
             __delay_us(250);
             while(SSPSTATbits.BF);
@@ -68,24 +70,38 @@ void __interrupt() isr(void){
 
 void main(void) {
     setup();
-   // PWM_Init();
-    while(1)
-    {
-        if (RB0 == 1)
+    while (1) {
+        if (RB0 == 1 && x == 0) 
         {
-            mDC = 1;
-           // CCPR1L = 125;
-        }
-        else 
-        {
-            mDC = 0;
-           // CCPR1L = 0;
+            while (RB0 == 1);
+            x = 1;
+            if (x == 1)
+            {
+                
+                mDC = 1;
+                RE0 = 1;
+                __delay_ms(200);
+            
+            }
+            
+            
+        } 
+        if (RB0 == 1 && x == 1) 
+        {                       // Cambiado a verificar si RB0 está en 1 cuando x es 1
+            while (RB0 == 1);
+            x = 0;
+            if (x == 0)
+            {
+                mDC = 0;            
+                RE0 = 0;            
+            __delay_ms(200);
+            }
         }
         
-       
     }
     return;
 }
+
 
 void setup(void)
 {
@@ -95,10 +111,12 @@ void setup(void)
     TRISB = 0;
     PORTB = 0;
     
+    TRISE = 0;   // All bits of Port E as outputs
+    PORTE = 0;   // Initialize Port E to low
+    
     // Oscilador 
     OSCCONbits.IRCF =0b111; 
     OSCCONbits.SCS = 1; 
-    
     
     I2C_Slave_Init(0x50);   
     return;
