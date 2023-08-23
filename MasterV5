@@ -142,7 +142,7 @@ void main(void)
         
         // LCD
         
-       uint8_t seg_decimal = bcd_to_decimal(0x00);
+       uint8_t seg_decimal = bcd_to_decimal(s);
        Lcd_Clear();                         // Iniciar la LCD
        Lcd_Set_Cursor(1,1);                 // Posicion del cursor
        Lcd_Write_String("Sec:");            // Caracter a mostrar
