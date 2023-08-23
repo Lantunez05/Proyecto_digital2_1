@@ -18,149 +18,107 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "I2C.h"
-#include "pwm.h"
+//#include "pwm.h"
 
 #define _XTAL_FREQ 8000000
-/*#define RS RE0
-#define EN RE1
-#define D4 RD4
-#define D5 RB5
-#define D6 RD6
-#define D7 RD7
+uint8_t z;
+int x = 0;
+int st_sens = 0;
+uint8_t mDC;
 
-#define date 0x04
-#define month 0x05
-#define year 0x06
-#define hour 0x02
-char s1_pot [10];
-char dia_str [3];
-char mes_str [3];
-char ye_str [3];
-char hora_str [3];*/
-
-#define min  0x01
-#define sec  0x00
-
-char min_str [3];
-char sec_str [3];
-
-void setup(void);
-uint8_t mdc, ultrarojo;
-uint8_t cont, ban, estado;
-uint8_t sec_ant = 0;
-uint8_t sec_act = 0;
-
-uint8_t bcd_to_decimal(uint8_t bcd) {
-    return ((bcd >> 4) * 10) + (bcd & 0x0F);
+// Prototipos
+void setup (void);
+//-------------Interrupcion---------------------
+void __interrupt() isr(void){
+    
+    if(PIR1bits.SSPIF == 1)
+    {
+        SSPCONbits.CKP = 0;
+        if ((SSPCONbits.SSPOV) || (SSPCONbits.WCOL))
+        {
+            z = SSPBUF;                 // Read the previous value to clear the buffer
+            SSPCONbits.SSPOV = 0;       // Clear the overflow flag
+            SSPCONbits.WCOL = 0;        // Clear the collision bit
+            SSPCONbits.CKP = 1;         // Enables SCL (Clock)
+        }
+        
+        if(!SSPSTATbits.D_nA && !SSPSTATbits.R_nW) // Lectura
+        {
+            //__delay_us(7);
+            z = SSPBUF;                 // Lectura del SSBUF para limpiar el buffer y la bandera BF
+            //__delay_us(2);
+            PIR1bits.SSPIF = 0;         // Limpia bandera de interrupci?n recepci?n/transmisi?n SSP
+            SSPCONbits.CKP = 1;         // Habilita entrada de pulsos de reloj SCL
+            while(!SSPSTATbits.BF);     // Esperar a que la recepci?n se complete
+            mDC = SSPBUF;                // Guardar en el PORTD el valor del buffer de recepci?n
+            __delay_us(250);
+        }
+        
+        else if(!SSPSTATbits.D_nA && SSPSTATbits.R_nW) // Escritura
+        {
+            z = SSPBUF;
+            BF = 0;
+            SSPBUF = mDC;
+            SSPCONbits.CKP = 1;
+            __delay_us(250);
+            while(SSPSTATbits.BF);
+        }
+        
+        PIR1bits.SSPIF = 0;
+    }
 }
 
-void main(void)
-{
+void main(void) {
     setup();
-    PWM_Init();
-    while(1)
-    {
-        
-        I2C_Master_Start();             // Iniciamos la comunicacion I2C
-        I2C_Master_Write(0x51);         // Seleccionamos a la direccion del primer PIC
-        mdc = I2C_Master_Read(0);       // Cargamos el valor enviado desde el primer PIC
-        if(mdc == 1 && estado == 0)     // Verificacion de estados
+    while (1) {
+        if (RB0 == 1 && x == 0) 
         {
-            CCPR1L = cont;              // Cargamos al CCPR1L el valor de contador para el servomotor
-            RE0 = 1;
-            if (cont == 150)            // Se hace verificaciones de banderas para que el servomotor
-            {                           // se vuelva a su posicion original cuando cont = 0
-                ban = 0;
-            }
-            if (cont == 0)
+            while (RB0 == 1);
+            x = 1;
+            if (x == 1)
             {
-                ban = 1;
-            }
-            if (ban == 1)
-            {
-                cont++;
-                cont++;
-                PORTB = cont;
-            }
-            if (ban == 0) 
-            {
-                cont--;
-                cont--;
-                PORTB = cont;
+                
+                mDC = 1;
+                RE0 = 1;
+                __delay_ms(200);
+            
             }
             
-        }
-        else 
-        {
-            CCPR1L = 0;
-            RE0 = 0;
-        }
-        I2C_Master_Stop();
-        __delay_ms(200);            // Paramos la comunicacion I2C y seteamos un delay de 2 segundos
-        
-        I2C_Master_Start();
-        I2C_Master_Write(0x53);
-        ultrarojo = I2C_Master_Read(0);
-        if(ultrarojo == 1)
-        {
-            estado = 1;
-            CCPR2L = 100;
-            RE1 = 1;
-        }
-        else 
-        {
-            estado = 0;
-            CCPR2L = 0;
-            RE1 = 0;
-        }
-        I2C_Master_Stop();
-        __delay_ms(200);
-        
-        if (ultrarojo == 1 ) 
-        {
-            I2C_Master_Start();
-            I2C_Master_Write(0xD0);     // Dirección del RTC (puedes ajustarla si es diferente)
-            I2C_Master_Write(sec);      // Dirección del registro de segundos en el RTC
-            I2C_Master_Stop();
-    
-            I2C_Master_Start();
-            I2C_Master_Write(0xD1);     // Dirección del RTC para lectura
-            sec_act = bcd_to_decimal(I2C_Master_Read(0) & 0x7F);  // Solo se toman los últimos 7 bits
-            I2C_Master_Stop();
-        }
-        else if (ultrarojo == 0)
-        {
-            I2C_Master_Start();
-            I2C_Master_Write(0xD0);     // Dirección del RTC (puedes ajustarla si es diferente)
-            I2C_Master_Write(sec);      // Dirección del registro de segundos en el RTC
-            I2C_Master_Write(0x00);
-            I2C_Master_Stop();
-    
-            I2C_Master_Start();
-            I2C_Master_Write(0xD1);     // Dirección del RTC para lectura
-            sec_act = I2C_Master_Read(0);  // Solo se toman los últimos 7 bits
-            I2C_Master_Stop();
+            
+        } 
+        if (RB0 == 1 && x == 1) 
+        {                       // Cambiado a verificar si RB0 está en 1 cuando x es 1
+            while (RB0 == 1);
+            x = 0;
+            if (x == 0)
+            {
+                mDC = 0;            
+                RE0 = 0;            
+            __delay_ms(200);
+            }
         }
         
     }
     return;
 }
+
+
 void setup(void)
 {
     ANSEL = 0;
     ANSELH = 0;
     
-    TRISA = 0;
     TRISB = 0;
-    TRISD = 0;
-    TRISE = 0;
-    PORTA = 0;
     PORTB = 0;
-    PORTD = 0;
-    PORTE = 0;
     
-    OSCCONbits.IRCF = 0b111; //8 MHz
-    OSCCONbits.SCS = 1;
-    I2C_Master_Init(100000);        // Inicializar Comuncación I2C
+    TRISE = 0;   // All bits of Port E as outputs
+    PORTE = 0;   // Initialize Port E to low
+    
+    // Oscilador 
+    OSCCONbits.IRCF =0b111; 
+    OSCCONbits.SCS = 1; 
+    
+    I2C_Slave_Init(0x50);   
+    return;
 }
 
