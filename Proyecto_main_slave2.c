@@ -1,3 +1,5 @@
+
+// CONFIG1
 #pragma config FOSC = INTRC_NOCLKOUT// Oscillator Selection bits (RC oscillator: CLKOUT function on RA6/OSC2/CLKOUT pin, RC on RA7/OSC1/CLKIN)
 #pragma config WDTE = OFF       // Watchdog Timer Enable bit (WDT disabled and can be enabled by SWDTEN bit of the WDTCON register)
 #pragma config PWRTE = OFF      // Power-up Timer Enable bit (PWRT disabled)
@@ -21,7 +23,7 @@
 
 #define _XTAL_FREQ 8000000
 uint8_t z;
-uint8_t mDC;
+uint8_t ultrarojo, rec;
 
 // Prototipos
 void setup (void);
@@ -39,7 +41,7 @@ void __interrupt() isr(void){
             SSPCONbits.CKP = 1;         // Enables SCL (Clock)
         }
         
-        if(!SSPSTATbits.D_nA && !SSPSTATbits.R_nW)
+        if(!SSPSTATbits.D_nA && !SSPSTATbits.R_nW)    // Lectura
         {
             //__delay_us(7);
             z = SSPBUF;                 // Lectura del SSBUF para limpiar el buffer y la bandera BF
@@ -47,15 +49,15 @@ void __interrupt() isr(void){
             PIR1bits.SSPIF = 0;         // Limpia bandera de interrupci?n recepci?n/transmisi?n SSP
             SSPCONbits.CKP = 1;         // Habilita entrada de pulsos de reloj SCL
             while(!SSPSTATbits.BF);     // Esperar a que la recepci?n se complete
-            mDC = SSPBUF;                // Guardar en el PORTD el valor del buffer de recepci?n
+            rec = SSPBUF;                // Guardar en el PORTD el valor del buffer de recepci?n
             __delay_us(250);
         }
         
-        else if(!SSPSTATbits.D_nA && SSPSTATbits.R_nW)
+        else if(!SSPSTATbits.D_nA && SSPSTATbits.R_nW) // Escritura
         {
             z = SSPBUF;
             BF = 0;
-            SSPBUF = PORTB;
+            SSPBUF = ultrarojo;
             SSPCONbits.CKP = 1;
             __delay_us(250);
             while(SSPSTATbits.BF);
@@ -67,14 +69,17 @@ void __interrupt() isr(void){
 
 void main(void) {
     setup();
-   // PWM_Init();
     while(1)
     {
-        if (RB0 == 1)
+        if (RB0 == 0)
         {
-            mDC = 1;
+            ultrarojo = 1;
            
-           // CCPR1L = 125;
+            __delay_us(500);
+        }
+        else
+        {
+            ultrarojo = 0;
             __delay_us(500);
         }
        
@@ -87,9 +92,9 @@ void setup(void)
     ANSEL = 0;
     ANSELH = 0;
     
-    TRISB = 0;
-    PORTB = 0;
+    TRISB0 = 1;
     TRISD = 0;
+    PORTB = 0;
     PORTD = 0;
     // Oscilador 
     OSCCONbits.IRCF =0b111; 
