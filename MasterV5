@@ -147,7 +147,7 @@ void main(void)
        Lcd_Set_Cursor(1,1);                 // Posicion del cursor
        Lcd_Write_String("Sec:");            // Caracter a mostrar
        Lcd_Set_Cursor(2,1);
-       sprintf(sec_str, "%d", s);           // Convertir el valor a cadena
+       sprintf(sec_str, "%d", seg_decimal);           // Convertir el valor a cadena
        Lcd_Write_String(sec_str);
        __delay_ms(200);
         
