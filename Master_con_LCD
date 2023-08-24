@@ -19,16 +19,17 @@
 #include <stdio.h>
 #include "I2C.h"
 #include "pwm.h"
+#include "LCD.h"
 
 #define _XTAL_FREQ 8000000
-/*#define RS RE0
+#define RS RE0
 #define EN RE1
 #define D4 RD4
 #define D5 RB5
 #define D6 RD6
 #define D7 RD7
 
-#define date 0x04
+/*#define date 0x04
 #define month 0x05
 #define year 0x06
 #define hour 0x02
@@ -46,7 +47,7 @@ char sec_str [3];
 
 void setup(void);
 uint8_t mdc, ultrarojo;
-uint8_t cont, ban, estado;
+uint8_t cont, ban, estado, s;
 uint8_t sec_ant = 0;
 uint8_t sec_act = 0;
 
@@ -58,6 +59,8 @@ void main(void)
 {
     setup();
     PWM_Init();
+    Lcd_Init();
+    unsigned int a;
     while(1)
     {
         
@@ -67,8 +70,7 @@ void main(void)
         if(mdc == 1 && estado == 0)     // Verificacion de estados
         {
             CCPR1L = cont;              // Cargamos al CCPR1L el valor de contador para el servomotor
-            RE0 = 1;
-            if (cont == 150)            // Se hace verificaciones de banderas para que el servomotor
+            if (cont > 220)            // Se hace verificaciones de banderas para que el servomotor
             {                           // se vuelva a su posicion original cuando cont = 0
                 ban = 0;
             }
@@ -78,14 +80,12 @@ void main(void)
             }
             if (ban == 1)
             {
-                cont++;
-                cont++;
+                cont += 20;
                 PORTB = cont;
             }
             if (ban == 0) 
             {
-                cont--;
-                cont--;
+                cont -= 20;
                 PORTB = cont;
             }
             
@@ -93,7 +93,6 @@ void main(void)
         else 
         {
             CCPR1L = 0;
-            RE0 = 0;
         }
         I2C_Master_Stop();
         __delay_ms(200);            // Paramos la comunicacion I2C y seteamos un delay de 2 segundos
@@ -105,13 +104,11 @@ void main(void)
         {
             estado = 1;
             CCPR2L = 100;
-            RE1 = 1;
         }
         else 
         {
             estado = 0;
             CCPR2L = 0;
-            RE1 = 0;
         }
         I2C_Master_Stop();
         __delay_ms(200);
@@ -126,6 +123,7 @@ void main(void)
             I2C_Master_Start();
             I2C_Master_Write(0xD1);     // Dirección del RTC para lectura
             sec_act = bcd_to_decimal(I2C_Master_Read(0) & 0x7F);  // Solo se toman los últimos 7 bits
+            s = sec_act;
             I2C_Master_Stop();
         }
         else if (ultrarojo == 0)
@@ -139,9 +137,44 @@ void main(void)
             I2C_Master_Start();
             I2C_Master_Write(0xD1);     // Dirección del RTC para lectura
             sec_act = I2C_Master_Read(0);  // Solo se toman los últimos 7 bits
+            s = sec_act;
             I2C_Master_Stop();
         }
         
+        // LCD
+        
+       uint8_t seg_decimal = bcd_to_decimal(s);
+       Lcd_Clear();                         // Iniciar la LCD
+       Lcd_Set_Cursor(1,1);                 // Posicion del cursor
+       Lcd_Write_String("Sec:");            // Caracter a mostrar
+       Lcd_Set_Cursor(2,1);
+       sprintf(sec_str, "%d", seg_decimal);           // Convertir el valor a cadena
+       Lcd_Write_String(sec_str);
+       Lcd_Set_Cursor(1,6);                 // Posicion del cursor
+       Lcd_Write_String("Servo:");            // Caracter a mostrar
+       Lcd_Set_Cursor(2,6);
+       if (mdc == 1 && estado == 0)
+       {
+           Lcd_Write_String("On");
+       }
+       else 
+       {
+          Lcd_Write_String("Off"); 
+       }
+       __delay_ms(500);
+       Lcd_Clear();
+       Lcd_Set_Cursor(1,1);                 // Posicion del cursor
+       Lcd_Write_String("Valiste:");            // Caracter a mostrar
+       Lcd_Set_Cursor(2,1);
+       if (ultrarojo == 1)
+       {
+           Lcd_Write_String("Correte papi");
+       }
+       else 
+       {
+           Lcd_Write_String("Te me escapaste maldito :v");
+       }
+        __delay_ms(500);
     }
     return;
 }
