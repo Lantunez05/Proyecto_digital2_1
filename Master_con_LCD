@@ -164,15 +164,15 @@ void main(void)
        __delay_ms(500);
        Lcd_Clear();
        Lcd_Set_Cursor(1,1);                 // Posicion del cursor
-       Lcd_Write_String("Valiste:");            // Caracter a mostrar
+       Lcd_Write_String("Cañon:");            // Caracter a mostrar
        Lcd_Set_Cursor(2,1);
        if (ultrarojo == 1)
        {
-           Lcd_Write_String("Correte papi");
+           Lcd_Write_String("Fuego");
        }
        else 
        {
-           Lcd_Write_String("Te me escapaste maldito :v");
+           Lcd_Write_String("Sin objetivo");
        }
         __delay_ms(500);
     }
