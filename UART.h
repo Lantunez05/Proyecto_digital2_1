@@ -14,3 +14,4 @@ void BAUDSelect (uint8_t freq);
 void txfunc (char data);
 char rxfunc();
 void string (char *str);
+#endif
