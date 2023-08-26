@@ -50,9 +50,19 @@ uint8_t mdc, ultrarojo;
 uint8_t cont, ban, estado, s;
 uint8_t sec_ant = 0;
 uint8_t sec_act = 0;
+uint8_t data;
 
 uint8_t bcd_to_decimal(uint8_t bcd) {
     return ((bcd >> 4) * 10) + (bcd & 0x0F);
+}
+
+void __interrupt() isr(){
+    if(PIR1bits.RCIF){
+        data = RCREG;
+        //string("HOLA");
+        PIR1bits.RCIF = 0;
+        
+    }
 }
 
 void main(void)
@@ -63,7 +73,6 @@ void main(void)
     unsigned int a;
     while(1)
     {
-        
         I2C_Master_Start();             // Iniciamos la comunicacion I2C
         I2C_Master_Write(0x51);         // Seleccionamos a la direccion del primer PIC
         mdc = I2C_Master_Read(0);       // Cargamos el valor enviado desde el primer PIC
@@ -190,7 +199,7 @@ void main(void)
        {
           Lcd_Write_String("Off"); 
        }
-       __delay_ms(500);
+       __delay_ms(1000);
       /* Lcd_Clear();
        Lcd_Set_Cursor(1,1);                 // Posicion del cursor
        Lcd_Write_String("Valiste:");            // Caracter a mostrar
@@ -223,5 +232,10 @@ void setup(void)
     
     OSCCONbits.IRCF = 0b111; //8 MHz
     OSCCONbits.SCS = 1;
+    INTCONbits.GIE = 1;
+    INTCONbits.PEIE = 1;
+    PIE1bits.RCIE = 1;
+    PIR1bits.RCIF = 0;
+    initUART(8);
     I2C_Master_Init(100000);        // Inicializar Comuncación I2C
 }
