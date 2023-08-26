@@ -2,6 +2,7 @@
 
 void initUART (uint8_t freq){
     SYNC = 0;
+    BAUDSelect(freq);
     SPEN = 1;
     TX9 = 0;
     TXEN = 1;
