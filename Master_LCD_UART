@@ -111,7 +111,7 @@ void main(void)
         I2C_Master_Start();
         I2C_Master_Write(0x53);
         ultrarojo = I2C_Master_Read(0);
-        if(ultrarojo == 1)
+        if(ultrarojo == 1 || data == 1)
         {
             estado = 1;
             CCPR2L = 100;
