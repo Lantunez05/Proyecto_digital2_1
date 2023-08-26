@@ -184,6 +184,7 @@ void main(void)
             uint8_t seg_decimal = bcd_to_decimal(sec_act);
             sprintf(sec_str, ":%d", seg_decimal);           // Convertir el valor a cadena
             Lcd_Write_String(sec_str);
+            __delay_ms(100);
        }
        else
        {
