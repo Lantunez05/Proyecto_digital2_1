@@ -45,6 +45,7 @@ char hora_str [3];*/
 
 char min_str [3];
 char sec_str [3];
+static char Time[] = "00";
 
 void setup(void);
 uint8_t mdc, ultrarojo;
@@ -182,8 +183,9 @@ void main(void)
             __delay_ms(200);
             
             uint8_t seg_decimal = bcd_to_decimal(sec_act);
-            sprintf(sec_str, ":%d", seg_decimal);           // Convertir el valor a cadena
-            Lcd_Write_String(sec_str);
+            Time[0]= seg_decimal / 10 + '0';
+            Time[1]= seg_decimal % 10 + '0';         // Convertir el valor a cadena
+            Lcd_Write_String(Time);
             __delay_ms(100);
        }
        else
